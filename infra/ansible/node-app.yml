@@ -1,0 +1,6 @@
+- name: golden template image 
+  hosts: all
+  become: yes
+  become_user: root
+  roles:
+    - node-app
