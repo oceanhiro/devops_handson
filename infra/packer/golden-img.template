@@ -5,7 +5,7 @@
     "instance_type" : "t2.micro",
     "source_ami" : "ami-e4599a82",
     "ssh_username" : "centos",
-    "ami_name" : "golden-img-template {{isotime \"yyyy-mm-dd_HH-mm\"}}"
+    "ami_name" : "golden-img-template{{isotime \"2000-11-11_11-11\"}}"
   }],
   "provisioners" : [{
     "type" : "ansible",
