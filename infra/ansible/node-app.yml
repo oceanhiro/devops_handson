@@ -1,6 +1,5 @@
-- name: golden template image 
+- name: node-app template image 
   hosts: all
   become: yes
-  become_user: root
   roles:
     - node-app
