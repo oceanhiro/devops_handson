@@ -5,13 +5,13 @@
     "instance_type" : "t2.micro",
     "source_ami" : "ami-5bfa513d",
     "ssh_username" : "centos",
-    "ami_name" : "node-app-img-template{{isotime | clean_ami_name}}"
+    "ami_name" : "ci-img-template{{isotime | clean_ami_name}}"
   }],
   "provisioners" : [{
     "type" : "ansible",
     "extra_arguments" : [
       "-b"
     ],
-    "playbook_file" : "../ansible/node-app.yml"
+    "playbook_file" : "../ansible/ci.yml"
   }]
 }
