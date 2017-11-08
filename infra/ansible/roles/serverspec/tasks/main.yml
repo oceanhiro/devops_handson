@@ -1,10 +1,13 @@
 - name: install ruby
-  yum : 
+  yum :
     name : ruby
-    state: installed 
+    state: installed
 
 - name: install serverspec
-  gem: name={{ item }} state=present user_install=no 
+  gem :
+    name : "{{ item }}"
+    state: present
+    user_install: no
   with_items:
-   - rake
-   - serverspec
+    - rake
+    - serverspec
