@@ -1,13 +1,3 @@
-//TODO:
-// NATゲートウェイ
-// 内部NWのデフォルトルートをNATゲートウェイにする
-// インスタンス作成(web-app,db,ci)
-// インスタンスにセキュリティグループ紐付け
-//NEXT:
-// リファクタリングする(module機能を使って再利用性を高める)
-// 環境ごとの差分を吸収できるようにする
-// tfstateをS3で管理できるようにする
-
 variable "region" {
     default = "ap-northeast-1" 
 }
@@ -68,6 +58,42 @@ resource "aws_route_table_association" "public_a" {
 resource "aws_route_table_association" "private_a" {
     subnet_id      = "${aws_subnet.private_a.id}" 
     route_table_id = "${aws_route_table.private_route.id}" 
+}
+
+resource "aws_security_group" "ssh_sg" {
+  name        = "ssh_sg"
+  description = "for ssh sg."
+  vpc_id      = "${aws_vpc.devops_handson_vpc.id}"
+}
+
+// Allow any internal network flow.
+resource "aws_security_group_rule" "ingress_any_any_self_ssh" {
+  security_group_id = "${aws_security_group.ssh_sg.id}"
+  from_port         = 0
+  to_port           = 65535
+  protocol          = "-1"
+  self              = true
+  type              = "ingress"
+}
+
+// Allow egress all
+resource "aws_security_group_rule" "egress_all_all_all_ssh" {
+  security_group_id = "${aws_security_group.ssh_sg.id}"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  type              = "egress"
+}
+
+// Allow SSH:22 (SSH)
+resource "aws_security_group_rule" "ingress_tcp_22_cidr" {
+  security_group_id = "${aws_security_group.ssh_sg.id}"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  type              = "ingress"
 }
 
 resource "aws_security_group" "web_app_sg" {
@@ -142,24 +168,38 @@ resource "aws_security_group_rule" "ingress_tcp_5432_cidr" {
   type              = "ingress"
 }
 
+resource "aws_instance" "ci-server" {
+    ami           = "ami-8ef55ee8" 
+    instance_type = "t2.micro" 
+    key_name      = "keypair_ocean_key.pem" 
+    vpc_security_group_ids = [
+        "${aws_security_group.web_app_sg.id}",
+	"${aws_security_group.ssh_sg.id}"
+    ]
+    subnet_id = "${aws_subnet.public_a.id}" 
+    associate_public_ip_address = "true" 
+    root_block_device = {
+        volume_size = "20" 
+    }
+    tags {
+        Name = "ci-server" 
+    }
+}
 
-//resource "aws_instance" "hello-terraform" {
-//    ami           = "ami-29d1e34e" 
-//    instance_type = "t2.micro" 
-//    key_name      = "keypair_ocean_key.pem" 
-//    vpc_security_group_ids = [
-//        "${aws_security_group.admin.id}" 
-//    ]
-//    subnet_id = "${aws_subnet.public_a.id}" 
-//    associate_public_ip_address = "true" 
-//    root_block_device = {
-//        volume_size = "8" 
-//    }
-//    tags {
-//        Name = "hello-terraform" 
-//    }
-//}
-
-//output "public ip of hello-terraform" {
-//    value = "${aws_instance.hello-terraform.public.ip}" 
-//}
+resource "aws_instance" "app-server" {
+    ami           = "ami-5cf9523a" 
+    instance_type = "t2.micro" 
+    key_name      = "keypair_ocean_key.pem" 
+    vpc_security_group_ids = [
+        "${aws_security_group.web_app_sg.id}",
+	"${aws_security_group.ssh_sg.id}"
+    ]
+    subnet_id = "${aws_subnet.public_a.id}" 
+    associate_public_ip_address = "true" 
+    root_block_device = {
+        volume_size = "8" 
+    }
+    tags {
+        Name = "app-server" 
+    }
+}
